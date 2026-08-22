@@ -1,0 +1,10 @@
+<resources>
+    <!-- Monochrome brand. Compose supplies the real colours; this is the
+         pre-Compose splash/window theme only. See values-night/themes.xml for
+         the dark counterpart. -->
+    <style name="Theme.Lplanner" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

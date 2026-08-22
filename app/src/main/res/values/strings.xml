@@ -1,0 +1,9 @@
+<resources>
+    <!--
+      The F-Droid build carries its own application id, so it can sit beside a
+      Play install rather than refusing to replace it. If both are on the same
+      device, two identical launcher icons reading "Lplanner" would be
+      indistinguishable.
+    -->
+    <string name="app_name">Lplanner (F-Droid)</string>
+</resources>

@@ -1,0 +1,12 @@
+<resources>
+    <!-- Night counterpart of values/themes.xml.
+         This is the window theme the system draws BEFORE Compose takes over, so
+         without it a dark-mode launch flashed a full white screen and dark
+         status-bar icons for a frame or two. Compose itself already follows
+         dark mode via isSystemInDarkTheme(); this only covers the gap. -->
+    <style name="Theme.Lplanner" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
