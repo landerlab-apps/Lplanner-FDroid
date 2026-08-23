@@ -94,7 +94,7 @@ Flying after diving. The Time to Fly figure on the plan is the model's own arith
 
 Altitude after diving. Driving over a mountain pass is the same problem as flying and is easier to overlook. Apply the same intervals.
 
-Diving at altitude. Arriving and diving the same day means your tissues still hold sea-level nitrogen, which is why Config asks whether you are acclimatised. DAN's guidance is to allow time at altitude before diving where you can.
+Diving at altitude. Arriving and diving the same day means your tissues still hold sea-level nitrogen, which is why Config asks whether you are equilibrated. DAN's guidance is to allow time at altitude before diving where you can; the U.S. Navy puts equilibration at about twelve hours.
 
 Hydration, exertion and thermal stress all affect decompression and none are modelled here. Cold on the deep portion followed by warm shallow stops is the worst combination for gas elimination.
 

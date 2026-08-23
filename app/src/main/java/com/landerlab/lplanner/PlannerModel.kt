@@ -71,7 +71,7 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
         altGfLow = s.altGfLow; altGfHigh = s.altGfHigh
         extraSlow = s.extraSlow; ndlLow = s.ndlLow
         altitude = s.altitude; conservatism = s.conservatism
-        altitudeAcclimatised = s.altitudeAcclimatised
+        altitudeEquilibrated = s.altitudeEquilibrated
         hoursAtAltitude = s.hoursAtAltitude
         deepStops = s.deepStops; pyleTime = s.pyleTime
         stopDistance = s.stopDistance; lastStop = s.lastStop
@@ -99,7 +99,7 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
         s.altGfLow = altGfLow; s.altGfHigh = altGfHigh
         s.extraSlow = extraSlow; s.ndlLow = ndlLow
         s.altitude = altitude; s.conservatism = conservatism
-        s.altitudeAcclimatised = altitudeAcclimatised
+        s.altitudeEquilibrated = altitudeEquilibrated
         s.hoursAtAltitude = hoursAtAltitude
         s.deepStops = deepStops; s.pyleTime = pyleTime
         s.stopDistance = stopDistance; s.lastStop = lastStop
@@ -141,9 +141,9 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
     var extraSlow by mutableStateOf(false)
     var ndlLow by mutableStateOf(false)
     var altitude by mutableStateOf("0")
-    /** Above sea level only. Not acclimatised with 0 hours is the diver who
+    /** Above sea level only. Not equilibrated with 0 hours is the diver who
      *  drove up this morning - the conservative default and the common case. */
-    var altitudeAcclimatised by mutableStateOf(false)
+    var altitudeEquilibrated by mutableStateOf(false)
     var hoursAtAltitude by mutableStateOf("0")
     var conservatism by mutableStateOf(10.0)        // 0-100 %
     var deepStops by mutableStateOf("p")            // n / p
@@ -255,7 +255,7 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
                 "SaltWater: ${yn(saltWater)}",
                 "Model: ${when (model) { "vval" -> "vval18"; "vpm" -> "vpm"; else -> "zhl16c" }}",
                 "Altitude: ${one(altitude)}",
-                "AltitudeAcclim: ${yn(altitudeAcclimatised)}",
+                "AltitudeEquil: ${yn(altitudeEquilibrated)}",
                 "HoursAtAltitude: ${one(hoursAtAltitude)}",
                 "Conservatism: ${conservatism.toInt()}",
                 "Precision: 1",

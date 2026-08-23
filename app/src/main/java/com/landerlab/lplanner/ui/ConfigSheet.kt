@@ -165,12 +165,15 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             ConfigGroup(
                 "Conditions",
                 "Altitude of the dive site, 0 for sea level. Above sea level the air is thinner, so " +
-                    "the same dive carries more decompression. Acclimatised means you have lived at " +
-                    "this altitude long enough for your tissues to have equilibrated to it. If you " +
-                    "drove up this morning you are still carrying your sea-level nitrogen and need " +
-                    "considerably more decompression — at 3000 m that can double the obligation, so " +
-                    "state it honestly. Hours at altitude covers the middle: the tissues wash out " +
-                    "towards equilibrium at their own rates. Conservatism applies only when gradient " +
+                    "the same dive carries more decompression. Equilibrated means your tissues have " +
+                    "off-gassed their excess nitrogen to match the thinner air; the U.S. Navy Diving " +
+                    "Manual puts that at about twelve hours at altitude. If you drove up this morning " +
+                    "you are still carrying your sea-level nitrogen and need considerably more " +
+                    "decompression — at 3000 m that can double the obligation, so state it honestly. " +
+                    "Hours at altitude covers the middle: the tissues wash out at their own rates, and " +
+                    "the slow ones are still loaded well after the fast ones have finished. This is " +
+                    "equilibration, not acclimatisation — adjusting to the lower oxygen takes far " +
+                    "longer and is not modelled here at all. Conservatism applies only when gradient " +
                     "factors are switched off. It (0–50 %) preloads the tissue compartments with " +
                     "additional inert gas — nitrogen, and helium in proportion when the profile uses " +
                     "trimix — weighted from the fast compartments (none) to the slow ones (the full " +
@@ -178,13 +181,13 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             ) {
                 LabeledField("Altitude", m.altitude) { m.altitude = it }
                 // Only above sea level, where the two references differ. At 0 m
-                // acclimatised and just-arrived are the same tissue loading and
+                // equilibrated and just-arrived are the same tissue loading and
                 // the control would be noise.
                 if ((m.altitude.toDoubleOrNull() ?: 0.0) > 0.0) {
-                    Check("Diver acclimatised to this altitude", m.altitudeAcclimatised) {
-                        m.altitudeAcclimatised = it
+                    Check("Diver equilibrated at this altitude (about 12 h)", m.altitudeEquilibrated) {
+                        m.altitudeEquilibrated = it
                     }
-                    if (!m.altitudeAcclimatised) {
+                    if (!m.altitudeEquilibrated) {
                         LabeledField("Hours at altitude", m.hoursAtAltitude, Modifier.width(190.dp)) {
                             m.hoursAtAltitude = it
                         }
