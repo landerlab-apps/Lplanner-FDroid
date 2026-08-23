@@ -2,12 +2,13 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(zplan C)
 
-# ZPLANKIT_DIR is injected by app/build.gradle.kts and points at the SAME
-# ZPlanKit checkout the iOS app builds from. Nothing is copied or forked.
+# ZPLANKIT_DIR is injected by app/build.gradle.kts. The engine is not vendored
+# here: it is the `engine` git submodule at the root of this repository, the
+# same czplan.c the Play and Apple builds compile. That is what stops the three
+# front ends from ever disagreeing about a schedule.
 if(NOT DEFINED ZPLANKIT_DIR)
-    # Fallback for the current layout: .../DeveloperAndroid/Lplanner-Android/app/src/main/cpp
-    # -> .../DeveloperApple/ZPlanKit
-    set(ZPLANKIT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../DeveloperApple/ZPlanKit")
+    # Fallback: app/src/main/cpp -> repository root -> engine
+    set(ZPLANKIT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../engine")
 endif()
 
 set(CZPLAN_SRC "${ZPLANKIT_DIR}/Sources/CZPlan/czplan.c")

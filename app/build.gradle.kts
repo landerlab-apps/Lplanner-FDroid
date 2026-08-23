@@ -15,13 +15,16 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// The shared engine. Locally this points at the ZPlanKit checkout on disk; on
-// F-Droid's builders it is overridden to the `engine` submodule via
-// -Pzplankit.dir=engine. See FDROID.md — the default below is a developer
-// convenience and must never be what F-Droid uses, since that path exists on
-// no machine but this one.
+// The shared engine. Default is the `engine` git submodule at the root of this
+// repository, which is what F-Droid's builders check out and compile.
+//
+// Resolved against rootProject, NOT against this module. project.file() would
+// resolve "engine" to app/engine, and the submodule is a level above that, so
+// the F-Droid build would have failed at configure time with the engine
+// sitting right there in the tree. Relative paths here mean "from the
+// repository root", which is where a reader would look for them.
 val zplanKitDir: String = (project.findProperty("zplankit.dir") as String? ?: "engine")
-    .let { file(it).canonicalPath }
+    .let { rootProject.file(it).canonicalPath }
 
 android {
     namespace = "com.landerlab.lplanner"

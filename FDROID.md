@@ -16,32 +16,33 @@ requirements:
 
 Point 3 is the one this project has to be careful about.
 
-## The engine must become a submodule
+## The engine is a submodule
 
 The app does not contain the decompression engine. `app/src/main/cpp/
 CMakeLists.txt` compiles `czplan.c` out of ZPlanKit, which is what guarantees a
 dive plans identically on Android, macOS and iOS.
 
-For local work the path comes from `gradle.properties`:
-
-```
-zplankit.dir=../../../DeveloperApple/ZPlanKit
-```
-
-That path exists on one machine in the world. **F-Droid must not use it.** Add
-the engine as a submodule and point the build there:
+It is the **`engine` submodule at the root of this repository**, and it is the
+default — no property needs to be set, and `submodules: true` in the recipe is
+all F-Droid requires. A plain `git clone --recurse-submodules` builds.
 
 ```sh
-git submodule add https://github.com/landerlab-apps/ZPlanKit.git engine
-git commit -m "Add the decompression engine as a submodule"
+git clone --recurse-submodules https://github.com/landerlab-apps/Lplanner-FDroid.git
 ```
-
-The recipe then overrides the property with `-Pzplankit.dir=engine`, and
-`submodules: true` fetches it.
 
 Pinning to a submodule commit has a second benefit worth having: the app
 version and the engine commit move together, so a published schedule cannot
 change underneath a release.
+
+**Relative paths are resolved against the repository root**, not the app
+module. This is not a detail — `project.file("engine")` resolves to
+`app/engine`, and the submodule is a level above that, so an earlier version of
+this document told F-Droid to set `-Pzplankit.dir=engine` and the build would
+have failed at configure time with the engine sitting right there in the tree.
+`app/build.gradle.kts` now uses `rootProject.file()`.
+
+To build against a ZPlanKit checkout you are actively editing, uncomment the
+override in `gradle.properties` — and remember the submodule is what ships.
 
 ## Build recipe
 
@@ -72,8 +73,6 @@ Builds:
     gradle:
       - yes
     ndk: r27c
-    gradleprops:
-      - zplankit.dir=engine
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
@@ -108,12 +107,12 @@ is supposed to be identical.
 
 ## Checklist
 
-- [ ] ZPlanKit public at `github.com/landerlab-apps/ZPlanKit`, GPL-3.0
-- [ ] `engine` submodule added and committed
+- [x] ZPlanKit public at `github.com/landerlab-apps/ZPlanKit`, GPL-3.0
+- [x] `engine` submodule added and committed (pinned at 0bca7d4, engine 1.21.0)
 - [ ] This repository public on GitHub
 - [ ] `tools/drift-check.sh` clean
 - [ ] Release tagged `v1.6.0`
-- [ ] `./gradlew assembleRelease` succeeds from a clean checkout with
-      `-Pzplankit.dir=engine`
+- [ ] `./gradlew assembleRelease` succeeds from a clean
+      `git clone --recurse-submodules`, with no property set
 - [ ] Screenshots in `fastlane/metadata/android/en-US/images/phoneScreenshots/`
 - [ ] Merge request opened against `fdroiddata`

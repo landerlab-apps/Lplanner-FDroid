@@ -39,13 +39,41 @@ else
     status=1
 fi
 
-# ---- the JNI bridge and CMake --------------------------------------------
-if diff -r -q "$PLAY/app/src/main/cpp" "$HERE/app/src/main/cpp" >/dev/null 2>&1; then
-    echo "Native bridge          identical"
+# ---- the JNI bridge, which must match exactly -----------------------------
+# CMakeLists.txt is deliberately NOT compared: the two trees reach the engine
+# by different routes - this one through the `engine` submodule, the Play tree
+# through the ZPlanKit checkout on disk - and that is the whole point of them
+# being separate. Only the ZPLANKIT_DIR fallback differs; everything below it
+# is the same build. zplan_jni.c is the code, and it must not drift.
+if diff -q "$PLAY/app/src/main/cpp/zplan_jni.c" \
+           "$HERE/app/src/main/cpp/zplan_jni.c" >/dev/null 2>&1; then
+    echo "JNI bridge             identical"
 else
-    echo "Native bridge          DIFFERS:"
-    diff -r -q "$PLAY/app/src/main/cpp" "$HERE/app/src/main/cpp" 2>&1 | sed 's/^/    /'
+    echo "JNI bridge             DIFFERS:"
+    diff "$PLAY/app/src/main/cpp/zplan_jni.c" \
+         "$HERE/app/src/main/cpp/zplan_jni.c" 2>&1 | sed 's/^/    /'
     status=1
+fi
+
+# ---- the engine both trees compile ---------------------------------------
+# Different routes, but it has to be the same file. Compares content, so a
+# submodule pinned to a stale commit shows up here rather than in a dive plan.
+PLAY_ENG=$(sed -n 's/^zplankit\.dir=//p' "$PLAY/gradle.properties" | head -1)
+[ -n "$PLAY_ENG" ] && PLAY_ENG="$PLAY/app/$PLAY_ENG" || PLAY_ENG="$PLAY/../../DeveloperApple/ZPlanKit"
+if [ -f "$PLAY_ENG/Sources/CZPlan/czplan.c" ] && [ -f "$HERE/engine/Sources/CZPlan/czplan.c" ]; then
+    pv=$(grep -m1 'ZP_VERSION "' "$PLAY_ENG/Sources/CZPlan/czplan.c" | sed 's/.*"\(.*\)".*/\1/')
+    fv=$(grep -m1 'ZP_VERSION "' "$HERE/engine/Sources/CZPlan/czplan.c" | sed 's/.*"\(.*\)".*/\1/')
+    if diff -q "$PLAY_ENG/Sources/CZPlan/czplan.c" \
+               "$HERE/engine/Sources/CZPlan/czplan.c" >/dev/null 2>&1; then
+        echo "Engine source          identical (both $pv)"
+    else
+        echo "Engine source          DIFFERS - Play $pv, submodule $fv"
+        echo "                       The submodule is pinned to an older commit."
+        echo "                       cd engine && git pull, then commit the bump."
+        status=1
+    fi
+else
+    echo "Engine source          not checked (submodule not initialised?)"
 fi
 
 # ---- dependency versions --------------------------------------------------
@@ -76,6 +104,7 @@ echo "Intentionally different, not checked:"
 echo "  applicationId          com.landerlab.lplanner[.fdroid]"
 echo "  app_name               \"Lplanner\" / \"Lplanner (F-Droid)\""
 echo "  signing                Play signs; F-Droid signs its own build"
+echo "  CMakeLists.txt         ZPLANKIT_DIR fallback: submodule vs checkout"
 echo "  fastlane metadata      F-Droid only"
 
 echo
