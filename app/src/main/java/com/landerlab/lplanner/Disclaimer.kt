@@ -87,5 +87,20 @@ The U.S. Navy publishes no helium parameters for this model; the helium handling
 OXYGEN EXPOSURE
 CNS % and OTUs are printed with every plan. Nothing enforces them — 100% CNS is a limit, not a target.
 
+DAN RECOMMENDATIONS
+Divers Alert Network guidance, which sits outside any decompression model and is not enforced by this planner.
+
+Flying after diving. The Time to Fly figure on the plan is the model's own arithmetic — the hours until your tissues tolerate a 10,000 ft cabin. It is not DAN's advice and is usually far shorter. DAN recommends a minimum 12-hour surface interval before flying after a single no-decompression dive, 18 hours after multiple dives or several days of diving, and considerably longer after any dive requiring decompression stops — commonly given as at least 24 hours. Take the longer figure.
+
+Altitude after diving. Driving over a mountain pass is the same problem as flying and is easier to overlook. Apply the same intervals.
+
+Diving at altitude. Arriving and diving the same day means your tissues still hold sea-level nitrogen, which is why Config asks whether you are acclimatised. DAN's guidance is to allow time at altitude before diving where you can.
+
+Hydration, exertion and thermal stress all affect decompression and none are modelled here. Cold on the deep portion followed by warm shallow stops is the worst combination for gas elimination.
+
+Ascent rate. Keep to the rate you planned. DAN and every training agency give 9–10 m/min as the maximum for the shallow portion.
+
+If you feel unwell after a dive, breathe oxygen and call the DAN emergency line for your region. Symptoms that appear hours later are still decompression illness.
+
 Most of the above follows Ross Hemingway's "Some common practices, myths and mistakes on decompression" at decompression.org. None of it replaces the disclaimer above. Validate every schedule against independent tables or software before diving it."""
 }

@@ -43,6 +43,8 @@ class StateStore(context: Context) {
             s.extraSlow = o.optBoolean("extraSlow", s.extraSlow)
             s.ndlLow = o.optBoolean("ndlLow", s.ndlLow)
             s.altitude = o.optString("altitude", s.altitude)
+            s.altitudeAcclimatised = o.optBoolean("altitudeAcclimatised", s.altitudeAcclimatised)
+            s.hoursAtAltitude = o.optString("hoursAtAltitude", s.hoursAtAltitude)
             s.conservatism = o.optDouble("conservatism", s.conservatism)
             s.deepStops = o.optString("deepStops", s.deepStops)
             s.pyleTime = o.optInt("pyleTime", s.pyleTime)
@@ -115,6 +117,8 @@ class StateStore(context: Context) {
                 .put("altGfLow", s.altGfLow).put("altGfHigh", s.altGfHigh)
                 .put("extraSlow", s.extraSlow).put("ndlLow", s.ndlLow)
                 .put("altitude", s.altitude).put("conservatism", s.conservatism)
+                .put("altitudeAcclimatised", s.altitudeAcclimatised)
+                .put("hoursAtAltitude", s.hoursAtAltitude)
                 .put("deepStops", s.deepStops).put("pyleTime", s.pyleTime)
                 .put("stopDistance", s.stopDistance).put("lastStop", s.lastStop)
                 .put("descentRates", s.descentRates).put("ascentRates", s.ascentRates)
@@ -158,6 +162,8 @@ class PlannerState {
     var extraSlow = false
     var ndlLow = false
     var altitude = "0"
+    var altitudeAcclimatised = false
+    var hoursAtAltitude = "0"
     var conservatism = 10.0
     var deepStops = "p"
     var pyleTime = 1
