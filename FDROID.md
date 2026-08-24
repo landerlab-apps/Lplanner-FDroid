@@ -65,7 +65,7 @@ Repo: https://github.com/landerlab-apps/Lplanner-FDroid.git
 Builds:
   - versionName: 1.6.0
     versionCode: 11
-    commit: v1.6.0
+    commit: 097793902810e1b777ebe1fef0fcbf2ea6da6c92   # full hash, never a tag
     subdir: app
     submodules: true
     gradle:
@@ -89,7 +89,16 @@ Check before submitting:
 
 - `ndk: r27c` must match `ndkVersion` in `app/build.gradle.kts`
   (27.2.12479018). Bump one, bump the other.
-- `commit:` must be a **tag**, not a branch. Tag each release: `git tag v1.6.0`.
+- **`commit:` must be the full 40-character hash — never a tag or branch.**
+  I had this backwards and a maintainer corrected it on the first submission.
+  Tags are mutable: we force-moved `v1.6.0` ourselves an hour before
+  submitting, which is exactly the failure they are guarding against. A hash
+  cannot move. Get it with `git rev-parse v1.6.0^{commit}`.
+  Keep tagging releases anyway — `UpdateCheckMode: Tags` uses them to notice
+  new versions; it is only the `commit:` field that needs the hash.
+- **The MR description must use the App Inclusion template**, with the task
+  boxes read and ticked. Choose it from the Description template dropdown when
+  editing the merge request.
 - The metadata filename must be the application id, `com.landerlab.lplanner
   .fdroid.yml` — note the suffix.
 - `gradle: [yes]` because there are no product flavours in this project. If
