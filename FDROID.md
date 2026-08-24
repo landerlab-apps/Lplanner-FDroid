@@ -54,7 +54,7 @@ Categories:
   - Sports & Health
 License: GPL-3.0-only
 AuthorName: Carlos Lander
-AuthorEmail: scubalander@gmail.com
+AuthorEmail: carlos.lander@etik.com
 SourceCode: https://github.com/landerlab-apps/Lplanner-FDroid
 IssueTracker: https://github.com/landerlab-apps/Lplanner-FDroid/issues
 Changelog: https://github.com/landerlab-apps/lplanner/blob/main/CHANGELOG.md
@@ -67,7 +67,7 @@ Repo: https://github.com/landerlab-apps/Lplanner-FDroid.git
 Builds:
   - versionName: 1.6.0
     versionCode: 11
-    commit: 097793902810e1b777ebe1fef0fcbf2ea6da6c92   # full hash, never a tag
+    commit: 073e9ee701e3f336fb29a47074a778e9fbd32714   # full hash, never a tag
     subdir: app
     submodules: true
     gradle:
