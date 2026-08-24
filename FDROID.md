@@ -67,7 +67,7 @@ Repo: https://github.com/landerlab-apps/Lplanner-FDroid.git
 Builds:
   - versionName: 1.6.0
     versionCode: 11
-    commit: 073e9ee701e3f336fb29a47074a778e9fbd32714   # full hash, never a tag
+    commit: <run: git rev-parse HEAD>   # full hash, never a tag
     subdir: app
     submodules: true
     gradle:
@@ -91,6 +91,16 @@ Check before submitting:
   Its value comes from the app's `app_name` string resource, so this build
   yields `AutoName: Lplanner (F-Droid)`. Let the pipeline tell you the exact
   value rather than guessing it.
+- **No `foojay-resolver` in `settings.gradle.kts`.** Android Studio adds
+  `org.gradle.toolchains.foojay-resolver-convention` to every new project. It
+  downloads JDKs from api.foojay.io during the build, and F-Droid's scanner
+  fails the build outright: *Found usual suspect
+  'org.gradle.toolchains.foojay-resolver'*. Delete the plugin and
+  `gradle/gradle-daemon-jvm.properties`, which is only foojay URLs. Nothing
+  here needs either. **Android Studio will offer to add it back** — the comment
+  at the top of `settings.gradle.kts` is there to stop that.
+- **The scanner covers the submodule too**, so the engine is held to the same
+  standard as the app.
 - **Field order is enforced** by `fdroid rewritemeta`. If the pipeline
   complains, the job log states the order it expected — it is a mechanical fix,
   not a judgement call.
