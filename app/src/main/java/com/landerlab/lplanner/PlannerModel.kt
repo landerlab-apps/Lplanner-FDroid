@@ -63,13 +63,14 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
 
     private fun apply(s: PlannerState) {
         depthsMetric = s.depthsMetric; rmvMetric = s.rmvMetric
+        rmvMetricOverride = s.rmvMetricOverride
         saltWater = s.saltWater; o2Narcotic = s.o2Narcotic
         model = s.model
         vpmConservatism = s.vpmConservatism
         vpmRadiusN2 = s.vpmRadiusN2; vpmRadiusHe = s.vpmRadiusHe
         useGF = s.useGF; gfLow = s.gfLow; gfHigh = s.gfHigh
         altGfLow = s.altGfLow; altGfHigh = s.altGfHigh
-        extraSlow = s.extraSlow; ndlLow = s.ndlLow
+        ndlLow = s.ndlLow
         altitude = s.altitude; conservatism = s.conservatism
         altitudeEquilibrated = s.altitudeEquilibrated
         hoursAtAltitude = s.hoursAtAltitude
@@ -91,13 +92,14 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
     private fun snapshot(): PlannerState {
         val s = PlannerState()
         s.depthsMetric = depthsMetric; s.rmvMetric = rmvMetric
+        s.rmvMetricOverride = rmvMetricOverride
         s.saltWater = saltWater; s.o2Narcotic = o2Narcotic
         s.model = model
         s.vpmConservatism = vpmConservatism
         s.vpmRadiusN2 = vpmRadiusN2; s.vpmRadiusHe = vpmRadiusHe
         s.useGF = useGF; s.gfLow = gfLow; s.gfHigh = gfHigh
         s.altGfLow = altGfLow; s.altGfHigh = altGfHigh
-        s.extraSlow = extraSlow; s.ndlLow = ndlLow
+        s.ndlLow = ndlLow
         s.altitude = altitude; s.conservatism = conservatism
         s.altitudeEquilibrated = altitudeEquilibrated
         s.hoursAtAltitude = hoursAtAltitude
@@ -127,6 +129,10 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
     // ---- Config sheet ----
     var depthsMetric by mutableStateOf(true)        // Depths: Feet / Meters
     var rmvMetric by mutableStateOf(true)           // RMVs: Cu.ft / Liters
+    /** True once the diver has set the RMV units explicitly. Until then the RMV
+     *  units follow the depth units and no `RmvMetric:` line is written, which
+     *  lets the engine's own "follow UseMetric" default (rmv_metric = -1) apply. */
+    var rmvMetricOverride by mutableStateOf(false)
     var saltWater by mutableStateOf(true)           // Water: Fresh / Salt
     var o2Narcotic by mutableStateOf(false)         // O2 Narcotic: No / Yes
     var model by mutableStateOf("c")                // "c" (ZHL16-C), "vval", or "vpm"
@@ -138,7 +144,6 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
     var gfHigh by mutableStateOf("85")
     var altGfLow by mutableStateOf("90")
     var altGfHigh by mutableStateOf("90")
-    var extraSlow by mutableStateOf(false)
     var ndlLow by mutableStateOf(false)
     var altitude by mutableStateOf("0")
     /** Above sea level only. Not equilibrated with 0 hours is the diver who
@@ -249,9 +254,14 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
             // Built line by line rather than with a trimIndent() raw string: trimIndent
             // measures indentation AFTER interpolation, so a newline pasted into any
             // config field would silently mangle every following key.
-            listOf(
+            // UseMetric first, and RmvMetric immediately after it when the diver
+            // has pinned the gas units: the engine applies its unit scaling as
+            // each key is read, so both flags have to precede any value they
+            // govern. Omitting RmvMetric is deliberate, not an oversight — it is
+            // what makes the engine's "gas units follow depth units" default apply.
+            listOfNotNull(
                 "UseMetric: ${yn(depthsMetric)}",
-                "RmvMetric: ${yn(rmvMetric)}",
+                if (rmvMetricOverride) "RmvMetric: ${yn(rmvMetric)}" else null,
                 "SaltWater: ${yn(saltWater)}",
                 "Model: ${when (model) { "vval" -> "vval18"; "vpm" -> "vpm"; else -> "zhl16c" }}",
                 "Altitude: ${one(altitude)}",
@@ -286,7 +296,6 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
                 val hi = if (useAltGF) altGfHigh else gfHigh
                 p.append("\nGradientFactors: $lo, $hi")
             }
-            p.append("\nExtraSlow: ${if (extraSlow) "y" else "n"}")
             p.append("\nNdlGF: ${if (ndlLow) "low" else "high"}")
             for (r in descentRates.lines().filter { it.isNotBlank() }) p.append("\nDescentRate: $r")
             for (r in ascentRates.lines().filter { it.isNotBlank() }) p.append("\nAscentRate: $r")
@@ -324,6 +333,113 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
 
     private fun fmt(v: Double): String =
         if (v == v.roundToInt().toDouble()) v.roundToInt().toString() else v.toString()
+
+    // ---- Units ----
+    //
+    // Settings are held in whatever units the diver is working in, and the
+    // engine is asked to compute in those same units — a 10 ft stop grid is a
+    // grid of whole feet, not of 3.048 m. Flipping a units control therefore
+    // has to rewrite every value that carries a dimension. Before v1.22 it
+    // rewrote none of them, so switching to Feet reinterpreted the metric
+    // defaults as feet: a 3 m last stop silently became 3 ft, and the ascent
+    // bands (70-30, 30-12, 12-0) left a 131 ft dive with no defined rate at
+    // all above 70 ft.
+
+    /** Depth unit in force, for labels. */
+    val depthUnit: String get() = if (depthsMetric) "m" else "ft"
+    /** RMV / gas-volume unit in force, for labels. */
+    val rmvUnit: String get() = if (rmvMetric) "L/min" else "cu.ft/min"
+
+    /**
+     * Switch the depth unit system, converting every depth-dimensioned value.
+     *
+     * Named `changeDepthUnits`, not `setDepthsMetric`: the `depthsMetric`
+     * property already generates a JVM setter with that exact signature, and
+     * the two collide at compile time ("platform declaration clash"). The Swift
+     * port carries the same name so the two do not drift.
+     *
+     * Rounding is to whole units, which is what makes the round trip stable:
+     * 3 m -> 10 ft -> 3 m, 40 m -> 131 ft -> 40 m. It also lands on the
+     * conventional imperial values divers expect (a 10 ft stop grid, not 9.8).
+     */
+    fun changeDepthUnits(metric: Boolean) {
+        if (metric == depthsMetric) return
+        val f = if (metric) 1.0 / FT_PER_M else FT_PER_M
+        altitude = scale(altitude, f)
+        stopDistance = scale(stopDistance, f)
+        lastStop = scale(lastStop, f)
+        maxEND = scale(maxEND, f)
+        descentRates = scaleLines(descentRates, f, emptySet())
+        ascentRates = scaleLines(ascentRates, f, emptySet())
+        // "80-30, 1.4": the depths convert, the setpoint must not.
+        decoSetpoints = scaleLines(decoSetpoints, f, setOf(2))
+        for (i in levels.indices) levels[i] = levels[i].copy(d = scale(levels[i].d, f))
+        entry = entry.copy(d = scale(entry.d, f))
+        depthsMetric = metric
+        // Gas units follow depth units unless the diver has said otherwise.
+        if (!rmvMetricOverride) applyRmvUnits(metric)
+        saveState()
+    }
+
+    /**
+     * Switch the RMV / gas-volume unit system. Marks the choice as explicit,
+     * which pins it against later depth-unit changes and makes the planner
+     * write an `RmvMetric:` line to say so.
+     */
+    fun changeRmvUnits(metric: Boolean) {
+        rmvMetricOverride = true
+        applyRmvUnits(metric)
+        saveState()
+    }
+
+    private fun applyRmvUnits(metric: Boolean) {
+        if (metric == rmvMetric) return
+        // 19 L/min <-> 0.67 cu.ft/min. Two decimals imperial, whole litres
+        // metric: a cubic foot is coarse enough that 0.1 would lose 3 L/min.
+        if (metric) {
+            bottomRMV = scale(bottomRMV, L_PER_CUFT, 0)
+            decoRMV = scale(decoRMV, L_PER_CUFT, 0)
+        } else {
+            bottomRMV = scale(bottomRMV, 1.0 / L_PER_CUFT, 2)
+            decoRMV = scale(decoRMV, 1.0 / L_PER_CUFT, 2)
+        }
+        rmvMetric = metric
+    }
+
+    /** Scale one numeric field. Anything unparseable is left exactly as typed —
+     *  a half-finished entry must never be silently rewritten to something else. */
+    private fun scale(s: String, f: Double, dp: Int = 0): String {
+        val v = s.trim().toDoubleOrNull() ?: return s
+        return round(v * f, dp)
+    }
+
+    private fun round(v: Double, dp: Int): String {
+        var p = 1.0
+        repeat(dp) { p *= 10.0 }
+        val r = (v * p).roundToInt() / p
+        return if (dp == 0) r.roundToInt().toString() else String.format("%.${dp}f", r)
+    }
+
+    /** Scale every number in a multi-line list, per line, skipping the
+     *  positions named in [skip] (0-based within the line). */
+    private fun scaleLines(s: String, f: Double, skip: Set<Int>): String =
+        s.split("\n").joinToString("\n") { line ->
+            val out = StringBuilder()
+            val num = StringBuilder()
+            var idx = 0
+            fun flush() {
+                if (num.isEmpty()) return
+                val v = num.toString().toDoubleOrNull()
+                if (idx !in skip && v != null) out.append(round(v * f, 0)) else out.append(num)
+                idx++
+                num.setLength(0)
+            }
+            for (ch in line) {
+                if (ch.isDigit() || ch == '.') num.append(ch) else { flush(); out.append(ch) }
+            }
+            flush()
+            out.toString()
+        }
 
     /** Add a new level, or commit changes to the one being edited. */
     fun addEntry() {
@@ -436,7 +552,11 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private companion object { const val TAG = "Lplanner" }
+    private companion object {
+        const val TAG = "Lplanner"
+        const val FT_PER_M = 3.280839895013123
+        const val L_PER_CUFT = 28.316846592
+    }
 
     /** Short description of the dive and the settings behind a logged plan. */
     private val diveSummary: String
@@ -468,7 +588,6 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
                 if (circuitClosed) add("CCR")
                 if (decoGasesOn && decoGases.isNotBlank()) add("deco $decoGases")
                 if (deepStops == "p" && !gfOn) add("Pyle $pyleTime min")
-                if (extraSlow) add("extra-slow")
                 if (extStopShallow > 0 || extStopDeep > 0)
                     add("ext stops $extStopDeep/$extStopShallow min")
                 if (plus3m) add(if (depthsMetric) "+3m" else "+10ft")

@@ -52,15 +52,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.landerlab.lplanner.BuildConfig
 import com.landerlab.lplanner.Disclaimer
 import com.landerlab.lplanner.DiveLevel
 import com.landerlab.lplanner.Manual
 import com.landerlab.lplanner.PlannerModel
 import com.landerlab.lplanner.Printing
+import com.landerlab.lplanner.Support
 import com.landerlab.lplanner.ZPlan
 
 /**
@@ -274,6 +277,36 @@ private fun InfoDialog(onDismiss: () -> Unit) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Text(Manual.text, style = MaterialTheme.typography.bodySmall)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                // F-Droid build only; see the note on Support. The file is
+                // identical in both Android trees so drift-check stays clean.
+                if (Support.showInBuild(BuildConfig.APPLICATION_ID)) {
+                    Text(Support.heading, fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium)
+                    Text(Support.text, style = MaterialTheme.typography.bodySmall)
+                    // Hands off to the browser via ACTION_VIEW, so the app still
+                    // needs no INTERNET permission and makes no network access.
+                    val uriHandler = LocalUriHandler.current
+                    // Plain `if`, not `?.let {}`: the lambda `let` takes is not
+                    // @Composable, so Text() cannot be called inside it.
+                    val payUrl = Support.paypalUrl
+                    if (payUrl != null) {
+                        Text(
+                            Support.linkLabel,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier.clickable { uriHandler.openUri(payUrl) },
+                        )
+                    }
+                    SelectionContainer {
+                        Text(
+                            Support.fallback,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
                 Text(
                     ZPlan.version,
                     style = MaterialTheme.typography.bodySmall,

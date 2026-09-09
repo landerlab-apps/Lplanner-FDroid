@@ -55,14 +55,18 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
         ) {
             ConfigGroup(
                 "Units",
-                "Depths sets the units for depth, altitude, stop distance and END. RMVs sets the " +
-                    "units for breathing-rate and gas-consumption figures — the two can differ.",
+                "Depths sets the units for depth, altitude, stop distance, END, ascent and descent " +
+                    "rates, and the dive levels themselves. Every value already entered is converted " +
+                    "when you switch, and the plan is then computed in those units — a 10 ft stop grid " +
+                    "is a grid of whole feet. RMVs sets the units for breathing-rate and " +
+                    "gas-consumption figures; it follows Depths until you set it yourself, after " +
+                    "which it stays where you put it.",
             ) {
                 SettingRow("Depths") {
-                    Seg(listOf("Feet", "Meters"), if (m.depthsMetric) 1 else 0) { m.depthsMetric = it == 1 }
+                    Seg(listOf("Feet", "Meters"), if (m.depthsMetric) 1 else 0) { m.changeDepthUnits(it == 1) }
                 }
                 SettingRow("RMVs") {
-                    Seg(listOf("Cu.ft.", "Liters"), if (m.rmvMetric) 1 else 0) { m.rmvMetric = it == 1 }
+                    Seg(listOf("Cu.ft.", "Liters"), if (m.rmvMetric) 1 else 0) { m.changeRmvUnits(it == 1) }
                 }
             }
 
@@ -179,7 +183,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                     "trimix — weighted from the fast compartments (none) to the slow ones (the full " +
                     "percentage), as if a previous dive had been made. Zero is the clean-diver profile.",
             ) {
-                LabeledField("Altitude", m.altitude) { m.altitude = it }
+                LabeledField("Altitude (${m.depthUnit})", m.altitude) { m.altitude = it }
                 // Only above sea level, where the two references differ. At 0 m
                 // equilibrated and just-arrived are the same tissue loading and
                 // the control would be noise.
@@ -230,8 +234,8 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                     "whichever model, gradient factors or deep stops are in use.",
             ) {
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
-                    LabeledField("Stop distance", m.stopDistance, Modifier.weight(1f)) { m.stopDistance = it }
-                    LabeledField("Last stop", m.lastStop, Modifier.weight(1f)) { m.lastStop = it }
+                    LabeledField("Stop distance (${m.depthUnit})", m.stopDistance, Modifier.weight(1f)) { m.stopDistance = it }
+                    LabeledField("Last stop (${m.depthUnit})", m.lastStop, Modifier.weight(1f)) { m.lastStop = it }
                 }
             }
 
@@ -275,21 +279,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             }
 
             ConfigGroup(
-                "Ascent behaviour (experimental)",
-                "Extra slow delays the ascent to the next stop while the off-gassing gradient of any " +
-                    "compartment — tissue inert tension minus ambient pressure, i.e. supersaturation — " +
-                    "exceeds 1.25 bar. It only ever adds time at the deeper depth, so the schedule " +
-                    "stays below the gradient factor regardless of the rule. Two limits keep it " +
-                    "practical: it never applies to the final ascent to the surface, and it adds at " +
-                    "most 5 minutes per stop. Time spent held is counted in the total decompression " +
-                    "time. Noticeable on dives that leave a compartment strongly supersaturated at " +
-                    "the stop.",
-            ) {
-                Check("Extra slow ascent rule", m.extraSlow) { m.extraSlow = it }
-            }
-
-            ConfigGroup(
-                "Descent — range, rate",
+                "Descent — range, rate (${m.depthUnit}/min)",
                 "One range per line: depth1-depth2, rate (ft or m per minute). List shallowest range " +
                     "first, leave no gaps.",
             ) {
@@ -297,7 +287,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             }
 
             ConfigGroup(
-                "Ascent — range, rate (deepest first)",
+                "Ascent — range, rate (${m.depthUnit}/min, deepest first)",
                 "One range per line, deepest range first, no gaps. Slow shallow ascent rates are " +
                     "credited to the decompression and can shorten stops or remove them entirely.",
             ) {
@@ -328,8 +318,8 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                     "already long. The extra time off-gasses you, so it does not simply add to " +
                     "the total: the stops above it usually shorten.",
             ) {
-                Stepper0to10("30 m+", m.extStopDeep) { m.extStopDeep = it }
-                Stepper0to10("7–30 m", m.extStopShallow) { m.extStopShallow = it }
+                Stepper0to10(if (m.depthsMetric) "30 m+" else "100 ft+", m.extStopDeep) { m.extStopDeep = it }
+                Stepper0to10(if (m.depthsMetric) "7–30 m" else "23–100 ft", m.extStopShallow) { m.extStopShallow = it }
             }
 
             ConfigGroup(
@@ -340,7 +330,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             ) {
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
                     LabeledField("Max PO2", m.maxPO2, Modifier.weight(1f)) { m.maxPO2 = it }
-                    LabeledField("Max END", m.maxEND, Modifier.weight(1f)) { m.maxEND = it }
+                    LabeledField("Max END (${m.depthUnit})", m.maxEND, Modifier.weight(1f)) { m.maxEND = it }
                 }
             }
 
@@ -351,8 +341,8 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                     "don't know your RMV, measure it.",
             ) {
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
-                    LabeledField("Bottom", m.bottomRMV, Modifier.weight(1f)) { m.bottomRMV = it }
-                    LabeledField("Deco", m.decoRMV, Modifier.weight(1f)) { m.decoRMV = it }
+                    LabeledField("Bottom (${m.rmvUnit})", m.bottomRMV, Modifier.weight(1f)) { m.bottomRMV = it }
+                    LabeledField("Deco (${m.rmvUnit})", m.decoRMV, Modifier.weight(1f)) { m.decoRMV = it }
                 }
             }
 

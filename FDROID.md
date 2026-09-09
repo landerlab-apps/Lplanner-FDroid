@@ -65,8 +65,8 @@ RepoType: git
 Repo: https://github.com/landerlab-apps/Lplanner-FDroid.git
 
 Builds:
-  - versionName: 1.6.0
-    versionCode: 11
+  - versionName: 1.7.0
+    versionCode: 12
     commit: <run: git rev-parse HEAD>   # full hash, never a tag
     subdir: app
     submodules: true
@@ -76,8 +76,8 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.6.0
-CurrentVersionCode: 11
+CurrentVersion: 1.7.0
+CurrentVersionCode: 12
 ```
 
 Check before submitting:
@@ -111,7 +111,7 @@ Check before submitting:
   I had this backwards and a maintainer corrected it on the first submission.
   Tags are mutable: we force-moved `v1.6.0` ourselves an hour before
   submitting, which is exactly the failure they are guarding against. A hash
-  cannot move. Get it with `git rev-parse v1.6.0^{commit}`.
+  cannot move. Get it with `git rev-parse v1.7.0^{commit}`.
   Keep tagging releases anyway — `UpdateCheckMode: Tags` uses them to notice
   new versions; it is only the `commit:` field that needs the hash.
 - **The MR description must use the App Inclusion template**, with the task
@@ -140,10 +140,10 @@ is supposed to be identical.
 ## Checklist
 
 - [x] ZPlanKit public at `github.com/landerlab-apps/ZPlanKit`, GPL-3.0
-- [x] `engine` submodule added and committed (pinned at 0bca7d4, engine 1.21.0)
+- [x] `engine` submodule added and committed (bump to engine 1.22.0 for v1.7.0)
 - [ ] This repository public on GitHub
 - [ ] `tools/drift-check.sh` clean
-- [ ] Release tagged `v1.6.0`
+- [ ] Release tagged `v1.7.0`
 - [ ] `./gradlew assembleRelease` succeeds from a clean
       `git clone --recurse-submodules`, with no property set
 - [ ] Screenshots in `fastlane/metadata/android/en-US/images/phoneScreenshots/`

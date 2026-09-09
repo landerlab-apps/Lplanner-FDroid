@@ -1,0 +1,22 @@
+Imperial units fixed.
+
+Switching between Meters and Feet now converts every value you have already
+entered — stop distance, last stop, END, altitude, the ascent and descent
+rate tables, your RMVs and your dive levels. Previously it converted none of
+them, so selecting Feet reinterpreted the metric defaults as feet: a 3 m last
+stop silently became 3 ft, and the ascent rate bands left a deep dive with no
+defined rate over its deepest section.
+
+Gas consumption now follows the depth units. Choosing Feet gives you cubic
+feet without having to find a second control, and the RMV units stay where you
+put them if you set them yourself.
+
+Every Config field now shows the unit it is in.
+
+The experimental extra-slow ascent rule has been removed. Measured
+against every realistic gradient-factor setting it never engaged once, so
+the checkbox did nothing; no schedule changes as a result.
+
+Engine 1.23.0. Cross-checked against MultiDeco on a 230 ft trimix dive: same
+first stop, same gas switches, stop times within one minute and always on the
+conservative side.

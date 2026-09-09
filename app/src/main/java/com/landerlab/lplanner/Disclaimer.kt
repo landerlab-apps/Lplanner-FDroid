@@ -21,6 +21,66 @@ object Disclaimer {
 }
 
 /**
+ * Contribution details, shown in the Info dialog of the F-Droid build only.
+ *
+ * Not the Play build: Google Play's Payments policy does not allow an app to
+ * point users at an external payment method for donations unless it is a
+ * registered non-profit, and Play would pull the listing. F-Droid has no such
+ * restriction, and neither does the macOS build, which shows the same block
+ * (see `infoSheet` in ZPlannerView.swift). The iOS build must not show it —
+ * App Review guideline 3.2.2(vi) treats an external donation link as
+ * circumventing in-app purchase.
+ *
+ * Both Android trees ship this file byte-identical, which is what
+ * `tools/drift-check.sh` requires; [showInBuild] is what differs at runtime,
+ * keyed off the application id, so there is nothing to keep in sync by hand.
+ */
+object Support {
+    const val paypal: String = "landercarlos@hotmail.com"
+
+    /**
+     * PayPal.Me handle, without the leading "paypal.me/". Empty = no link, and
+     * the Info dialog then shows the address alone.
+     *
+     * This replaces the `/donate/` endpoint, which PayPal refuses outright in
+     * some countries — "Donations aren't supported in this organization's
+     * country" — whatever parameters are passed. PayPal.Me is a plain payment
+     * link rather than a donation flow, so that restriction does not apply; it
+     * needs only a personal account, and the sender types the amount. Claim one
+     * free at paypal.me. It cannot be changed or deleted afterwards, so pick
+     * the handle deliberately.
+     */
+    const val paypalHandle: String = "carloselander"
+
+    /**
+     * One tap to a payable page, because a plain address asks the reader to open
+     * PayPal, find "send money" and retype it — three chances to give up.
+     *
+     * Opening this needs no INTERNET permission: it is handed to the browser as
+     * an ACTION_VIEW intent, and the app itself still makes no network access.
+     */
+    val paypalUrl: String? =
+        if (paypalHandle.isEmpty()) null else "https://paypal.me/$paypalHandle"
+
+    const val linkLabel: String = "Send a contribution with PayPal"
+
+    /** True in the F-Droid build (applicationId com.landerlab.lplanner.fdroid). */
+    fun showInBuild(applicationId: String): Boolean = applicationId.endsWith(".fdroid")
+
+    const val heading: String = "Support the developer"
+
+    const val text: String =
+        "Lplanner is free and has no adverts, no tracking and no subscription. " +
+        "If it has been useful to you, you can send the developer a contribution:"
+
+    /** Shown under the link: some people will not follow a payment link from
+     *  inside an app, and should not have to hunt for another way to do it.
+     *  With no link configured this is the only thing shown. */
+    val fallback: String =
+        if (paypalHandle.isEmpty()) "PayPal, to $paypal" else "or send to $paypal"
+}
+
+/**
  * Short how-to shown in the Info dialog, under the disclaimer.
  * Kept word-for-word identical to `Manual` in ZPlannerView.swift.
  */
@@ -100,7 +160,5 @@ Hydration, exertion and thermal stress all affect decompression and none are mod
 
 Ascent rate. Keep to the rate you planned. DAN and every training agency give 9–10 m/min as the maximum for the shallow portion.
 
-If you feel unwell after a dive, breathe oxygen and call the DAN emergency line for your region. Symptoms that appear hours later are still decompression illness.
-
-Most of the above follows Ross Hemingway's "Some common practices, myths and mistakes on decompression" at decompression.org. None of it replaces the disclaimer above. Validate every schedule against independent tables or software before diving it."""
+If you feel unwell after a dive, breathe oxygen and call the DAN emergency line for your region. Symptoms that appear hours later are still decompression illness."""
 }

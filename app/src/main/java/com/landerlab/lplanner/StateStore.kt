@@ -29,6 +29,10 @@ class StateStore(context: Context) {
             val s = PlannerState()
             s.depthsMetric = o.optBoolean("depthsMetric", s.depthsMetric)
             s.rmvMetric = o.optBoolean("rmvMetric", s.rmvMetric)
+            // Absent in states written before v1.22: infer an override from the
+            // saved pair, so a diver who had deliberately mixed units keeps them.
+            s.rmvMetricOverride =
+                o.optBoolean("rmvMetricOverride", s.rmvMetric != s.depthsMetric)
             s.saltWater = o.optBoolean("saltWater", s.saltWater)
             s.o2Narcotic = o.optBoolean("o2Narcotic", s.o2Narcotic)
             s.model = o.optString("model", s.model)
@@ -40,7 +44,6 @@ class StateStore(context: Context) {
             s.gfHigh = o.optString("gfHigh", s.gfHigh)
             s.altGfLow = o.optString("altGfLow", s.altGfLow)
             s.altGfHigh = o.optString("altGfHigh", s.altGfHigh)
-            s.extraSlow = o.optBoolean("extraSlow", s.extraSlow)
             s.ndlLow = o.optBoolean("ndlLow", s.ndlLow)
             s.altitude = o.optString("altitude", s.altitude)
             s.altitudeEquilibrated = o.optBoolean("altitudeEquilibrated", s.altitudeEquilibrated)
@@ -108,6 +111,7 @@ class StateStore(context: Context) {
             }
             val o = JSONObject()
                 .put("depthsMetric", s.depthsMetric).put("rmvMetric", s.rmvMetric)
+                .put("rmvMetricOverride", s.rmvMetricOverride)
                 .put("saltWater", s.saltWater).put("o2Narcotic", s.o2Narcotic)
                 .put("model", s.model)
                 .put("vpmConservatism", s.vpmConservatism)
@@ -115,7 +119,7 @@ class StateStore(context: Context) {
                 .put("vpmRadiusHe", s.vpmRadiusHe)
                 .put("useGF", s.useGF).put("gfLow", s.gfLow).put("gfHigh", s.gfHigh)
                 .put("altGfLow", s.altGfLow).put("altGfHigh", s.altGfHigh)
-                .put("extraSlow", s.extraSlow).put("ndlLow", s.ndlLow)
+                .put("ndlLow", s.ndlLow)
                 .put("altitude", s.altitude).put("conservatism", s.conservatism)
                 .put("altitudeEquilibrated", s.altitudeEquilibrated)
                 .put("hoursAtAltitude", s.hoursAtAltitude)
@@ -148,6 +152,7 @@ class StateStore(context: Context) {
 class PlannerState {
     var depthsMetric = true
     var rmvMetric = true
+    var rmvMetricOverride = false
     var saltWater = true
     var o2Narcotic = false
     var model = "c"
@@ -159,7 +164,6 @@ class PlannerState {
     var gfHigh = "85"
     var altGfLow = "90"
     var altGfHigh = "90"
-    var extraSlow = false
     var ndlLow = false
     var altitude = "0"
     var altitudeEquilibrated = false
