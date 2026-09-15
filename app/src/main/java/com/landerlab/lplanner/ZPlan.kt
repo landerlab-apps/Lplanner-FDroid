@@ -25,6 +25,8 @@ data class DivePlan(
     val warnings: String,
     /** End-of-dive tissue state, `tissue.dat` format, for the next repetitive dive. */
     val tissueFileText: String,
+    /** True when the engine declined to compute a schedule; [warnings] says why. */
+    val refused: Boolean = false,
 )
 
 object ZPlan {
@@ -52,6 +54,7 @@ object ZPlan {
             reportText = r[1].orEmpty(),
             warnings = r[2].orEmpty(),
             tissueFileText = r[3].orEmpty(),
+            refused = r.getOrNull(4) == "1",
         )
     }
 }

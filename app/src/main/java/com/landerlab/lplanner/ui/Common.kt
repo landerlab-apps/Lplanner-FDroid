@@ -156,11 +156,15 @@ fun RateEditor(
     )
 }
 
-/** Config section: title, controls, grey help text, divider. */
+/**
+ * Config section: title, controls, divider. No explanatory text: Config is a
+ * plain list of controls and every setting is described in ConfigGuide, shown
+ * by the Info button, where it can be read end to end rather than a paragraph
+ * at a time between two pickers.
+ */
 @Composable
 fun ConfigGroup(
     title: String,
-    help: String,
     content: @Composable () -> Unit,
 ) {
     Column(
@@ -169,11 +173,6 @@ fun ConfigGroup(
     ) {
         Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
         content()
-        Text(
-            help,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
         androidx.compose.material3.HorizontalDivider(
             color = MaterialTheme.colorScheme.outlineVariant,
             modifier = Modifier.padding(top = 4.dp),

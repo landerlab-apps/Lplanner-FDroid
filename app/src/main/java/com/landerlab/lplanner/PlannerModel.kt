@@ -81,10 +81,13 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
         maxPO2 = s.maxPO2; maxEND = s.maxEND
         bottomRMV = s.bottomRMV; decoRMV = s.decoRMV
         extStopShallow = s.extStopShallow; extStopDeep = s.extStopDeep
+        airBreaksOn = s.airBreaksOn; airBreakMode = s.airBreakMode
+        breakAfter = s.breakAfter; breakFor = s.breakFor; breakGas = s.breakGas
         si48 = s.si48; si24 = s.si24; siActual = s.siActual
         decoGasesOn = s.decoGasesOn; decoGases = s.decoGases
         circuitClosed = s.circuitClosed
         plus3m = s.plus3m; plus5min = s.plus5min; useAltGF = s.useAltGF
+        travelGas = s.travelGas
         levels.clear(); levels.addAll(s.levels)
         baselineTissue = s.baselineTissue; baselineDate = s.baselineDate
     }
@@ -110,10 +113,13 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
         s.maxPO2 = maxPO2; s.maxEND = maxEND
         s.bottomRMV = bottomRMV; s.decoRMV = decoRMV
         s.extStopShallow = extStopShallow; s.extStopDeep = extStopDeep
+        s.airBreaksOn = airBreaksOn; s.airBreakMode = airBreakMode
+        s.breakAfter = breakAfter; s.breakFor = breakFor; s.breakGas = breakGas
         s.si48 = si48; s.si24 = si24; s.siActual = siActual
         s.decoGasesOn = decoGasesOn; s.decoGases = decoGases
         s.circuitClosed = circuitClosed
         s.plus3m = plus3m; s.plus5min = plus5min; s.useAltGF = useAltGF
+        s.travelGas = travelGas
         s.levels = levels.toList()
         s.baselineTissue = baselineTissue; s.baselineDate = baselineDate
         return s
@@ -135,7 +141,7 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
     var rmvMetricOverride by mutableStateOf(false)
     var saltWater by mutableStateOf(true)           // Water: Fresh / Salt
     var o2Narcotic by mutableStateOf(false)         // O2 Narcotic: No / Yes
-    var model by mutableStateOf("c")                // "c" (ZHL16-C), "vval", or "vpm"
+    var model by mutableStateOf("c")                // "c" (ZHL16-C), "vval" (VVAL-79), or "vpm"
     var vpmConservatism by mutableStateOf(0)        // 0-4
     var vpmRadiusN2 by mutableStateOf("0.6")        // initial critical radius N2, microns
     var vpmRadiusHe by mutableStateOf("0.5")        // initial critical radius He, microns
@@ -166,6 +172,14 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
     /** Extra hold on a deco mix switch, per depth band, 0-10 min. */
     var extStopShallow by mutableStateOf(0)
     var extStopDeep by mutableStateOf(0)
+    /** Air breaks. Off, or the Navy dead-time rule / Subsurface modelled rule. */
+    var airBreaksOn by mutableStateOf(false)
+    var airBreakMode by mutableStateOf("navy")
+    /** Minutes on the rich mix, minutes on the break gas, and the chosen
+     *  break gas (blank = automatic). Both modes use these. */
+    var breakAfter by mutableStateOf("30")
+    var breakFor by mutableStateOf("5")
+    var breakGas by mutableStateOf("")
 
     // ---- Main window rows ----
     var si48 by mutableStateOf(false)
@@ -176,6 +190,9 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
     var circuitClosed by mutableStateOf(false)      // Open / Closed
     var plus3m by mutableStateOf(false)             // add 3 m / 10 ft to deepest level
     var plus5min by mutableStateOf(false)           // add 5 min to deepest level
+    /** Descend on the leanest carried mix breathable at the surface when the
+     *  back gas is hypoxic there, switching at the first safe stop increment. */
+    var travelGas by mutableStateOf(false)
     var useAltGF by mutableStateOf(false)           // use Alternative GF pair
 
     // ---- Levels ----
@@ -263,7 +280,7 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
                 "UseMetric: ${yn(depthsMetric)}",
                 if (rmvMetricOverride) "RmvMetric: ${yn(rmvMetric)}" else null,
                 "SaltWater: ${yn(saltWater)}",
-                "Model: ${when (model) { "vval" -> "vval18"; "vpm" -> "vpm"; else -> "zhl16c" }}",
+                "Model: ${when (model) { "vval" -> "vval79"; "vpm" -> "vpm"; else -> "zhl16c" }}",
                 "Altitude: ${one(altitude)}",
                 "AltitudeEquil: ${yn(altitudeEquilibrated)}",
                 "HoursAtAltitude: ${one(hoursAtAltitude)}",
@@ -285,6 +302,11 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
                 "MaxEND: ${one(maxEND)}",
                 "ExtStopShallow: $extStopShallow",
                 "ExtStopDeep: $extStopDeep",
+                "AirBreaks: ${if (airBreaksOn) airBreakMode else "n"}",
+                "O2Period: ${one(breakAfter)}",
+                "AirBreakTime: ${one(breakFor)}",
+                "BreakGas: ${one(breakGas)}",
+                "TravelGas: ${yn(travelGas)}",
             ).joinTo(p, "\n")
             if (model == "vpm") {
                 p.append("\nVpmConservatism: $vpmConservatism")
@@ -512,31 +534,21 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
             // itself.
             val r = ZPlan.plan(profileText, baselineTissue)
             Log.i(TAG, "calculate: engine returned ${r.reportText.length} chars")
-            // Android only: the engine appends its warnings to the end of the
-            // report. On a phone that block can run to six or seven wrapped
-            // lines under a schedule that is already fighting for height, so it
-            // is stripped here and the standing warning lives in Info instead.
-            // zp_report() appends exactly "\n" + warnings, so removing that
-            // suffix is exact rather than a guess at where the table ends.
-            // iOS and macOS keep the warnings in the report.
-            planText = if (r.warnings.isNotEmpty())
+            // Android strips the engine's advisory warnings from under the
+            // schedule: on a phone that block runs to six or seven wrapped
+            // lines under a table already fighting for height, and the standing
+            // advice is in Info. zp_report() appends exactly "\n" + warnings,
+            // so removing that suffix is exact rather than a guess at where the
+            // table ends.
+            //
+            // A refusal is the opposite case. There is no schedule, and the
+            // warning is the only thing on screen that says why, so it stays.
+            planText = if (r.warnings.isNotEmpty() && !r.refused)
                 r.reportText.removeSuffix("\n" + r.warnings).trimEnd() + "\n"
             else r.reportText
             // NOT r.warnings. The notes line is for the reasons there is NO plan.
             notes = ""
             resultTissue = r.tissueFileText
-            // Log at the moment of calculation. Logging used to happen when the
-            // Log button was pressed, which saved whatever planText happened to
-            // hold — i.e. the previous calculation if any setting had changed
-            // since — and appended a duplicate every time the log was merely
-            // viewed. Recording it here means an entry always matches the
-            // settings that produced it.
-            // Prepared here, saved only if the diver asks for it. Building the
-            // entry at this moment is what keeps it honest: it captures the
-            // plan and the settings that produced it together. Logging on a
-            // later button press was the old bug — it saved whatever planText
-            // happened to hold by then, which was the PREVIOUS calculation if
-            // anything had been changed since.
             pendingLog = LogEntry(summary = diveSummary, text = planText)
             saveState()
         } catch (e: ZPlanException) {
@@ -572,7 +584,7 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
             // Named modelText, not model: a local called `model` would shadow the
             // property of the same name and read very confusingly.
             val modelText = when (model) {
-                "vval" -> "VVAL-18"
+                "vval" -> "VVAL-79"
                 "vpm"  -> "VPM-B +$vpmConservatism"
                 else   -> buildString {
                     append("ZHL16-C")
@@ -590,8 +602,12 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
                 if (deepStops == "p" && !gfOn) add("Pyle $pyleTime min")
                 if (extStopShallow > 0 || extStopDeep > 0)
                     add("ext stops $extStopDeep/$extStopShallow min")
+                if (airBreaksOn)
+                    add("air breaks " + (if (airBreakMode == "navy") "Navy" else "Subsurface") +
+                        " $breakAfter/$breakFor")
                 if (plus3m) add(if (depthsMetric) "+3m" else "+10ft")
                 if (plus5min) add("+5min")
+                if (travelGas) add("travel gas")
                 if (repetitive) add("SI $surfaceInterval")
             }
 
@@ -617,9 +633,6 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
      */
     fun saveToLog() {
         val entry = pendingLog ?: return
-        // Compare against the whole log, not just the newest entry. Checking
-        // only the first meant a plan you had deleted came straight back the
-        // next time you saved the same settings.
         if (log.none { it.text == entry.text }) {
             log.add(0, entry)
             store.save(log)
@@ -642,11 +655,6 @@ class PlannerModel(app: Application) : AndroidViewModel(app) {
         baselineTissue = t
         baselineDate = System.currentTimeMillis()
         siActual = ""; si24 = false; si48 = false
-        // Consume it. Without this the button stayed live after committing, so
-        // "Next dive" sat on screen next to "Residual gas is carried" as though
-        // nothing had happened — and pressing it again re-stamped the SAME
-        // dive with a fresh timestamp, silently resetting the surface interval
-        // to zero while the plan on screen was unchanged.
         resultTissue = null
         saveState()
     }

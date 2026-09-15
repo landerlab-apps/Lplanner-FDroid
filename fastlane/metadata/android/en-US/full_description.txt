@@ -11,14 +11,16 @@ MODELS
 
 * ZHL-16C — the Buhlmann set, with gradient factors or a conservatism
   percentage, and optional Pyle deep stops.
-* VVAL-18 — the U.S. Navy Thalmann EL-DCM, exponential uptake and linear
-  elimination. The Navy publishes no helium parameters for this model; the
-  helium handling here is an unvalidated extrapolation, and the app says so
-  when you plan trimix on it.
+* VVAL-79 — the U.S. Navy Thalmann EL-DCM, exponential uptake and linear
+  elimination, with the published nine-compartment air parameter set. Air,
+  nitrox and oxygen only: the Navy publishes no helium parameters for this
+  model, so a dive carrying helium is refused rather than computed against
+  numbers that do not exist. Use VPM-B or ZHL-16C for trimix.
 * VPM-B — the Varying Permeability Model of Yount and Hoffman, in Erik Baker's
-  implementation, with conservatism 0 to 4. Validated against Baker's own
-  published output: all eighteen stop depths and times match exactly on his
-  80 msw trimix benchmark.
+  implementation, with conservatism 0 to 4. Checked against Baker's own
+  published output on his 80 msw trimix benchmark: 13 of the 18 stop times
+  match exactly, with the first stop one 3 m increment deeper and four minutes
+  more total stop time, for the reasons set out in the manual.
 
 All three share one decompression engine, written in C, which is the same
 engine the macOS and iOS builds use. Identical input gives an identical

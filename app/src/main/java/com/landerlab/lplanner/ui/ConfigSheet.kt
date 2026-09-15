@@ -53,15 +53,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         ) {
-            ConfigGroup(
-                "Units",
-                "Depths sets the units for depth, altitude, stop distance, END, ascent and descent " +
-                    "rates, and the dive levels themselves. Every value already entered is converted " +
-                    "when you switch, and the plan is then computed in those units — a 10 ft stop grid " +
-                    "is a grid of whole feet. RMVs sets the units for breathing-rate and " +
-                    "gas-consumption figures; it follows Depths until you set it yourself, after " +
-                    "which it stays where you put it.",
-            ) {
+            ConfigGroup("Units") {
                 SettingRow("Depths") {
                     Seg(listOf("Feet", "Meters"), if (m.depthsMetric) 1 else 0) { m.changeDepthUnits(it == 1) }
                 }
@@ -70,11 +62,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                 }
             }
 
-            ConfigGroup(
-                "Environment",
-                "Fresh or salt water changes the depth-to-pressure conversion. O2 Narcotic controls " +
-                    "whether oxygen counts as narcotic when calculating equivalent narcotic depths (ENDs).",
-            ) {
+            ConfigGroup("Environment") {
                 SettingRow("Water") {
                     Seg(listOf("Fresh", "Salt"), if (m.saltWater) 1 else 0) { m.saltWater = it == 1 }
                 }
@@ -83,16 +71,9 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                 }
             }
 
-            ConfigGroup(
-                "Model",
-                "ZHL16-C is the Bühlmann set used here. VVAL-18 is the U.S. Navy Thalmann EL-DCM " +
-                    "(exponential uptake, linear elimination); gradient factors and Conservatism do not " +
-                    "apply to it. VPM-B (Yount/Hoffman/Baker) tracks bubble nuclei rather than dissolved " +
-                    "gas tension — it tends to place the first stop deep, with shorter shallow stops. " +
-                    "Gradient factors and Conservatism apply to ZHL16-C only.",
-            ) {
+            ConfigGroup("Model") {
                 Seg(
-                    listOf("ZHL16-C", "VVAL-18", "VPM-B"),
+                    listOf("ZHL16-C", "VVAL-79", "VPM-B"),
                     when (m.model) { "vval" -> 1; "vpm" -> 2; else -> 0 },
                     modifier = Modifier.fillMaxWidth(),
                 ) { m.model = when (it) { 1 -> "vval"; 2 -> "vpm"; else -> "c" } }
@@ -107,13 +88,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             }
 
             if (m.model == "vpm") {
-                ConfigGroup(
-                    "VPM-B",
-                    "Conservatism adds extra gas volume allowance on top of Baker's nominal schedule: " +
-                        "0 is the published reference, 4 is the most conservative. Critical radii are the " +
-                        "initial nucleus sizes in microns (N2 0.6, He 0.5 by default). Leave the radii " +
-                        "alone — changing them moves you outside the validated envelope.",
-                ) {
+                ConfigGroup("VPM-B") {
                     Column {
                         Text(
                             "Conservatism: ${m.vpmConservatism}  (0–4)",
@@ -134,28 +109,14 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             }
 
             if (m.model == "c") {
-                ConfigGroup(
-                    "Alternative gradient factors",
-                    "A second GF pair, used instead of the main pair whenever altGF is checked on the " +
-                        "main screen. Set these to whatever you like — any values are accepted, low and " +
-                        "high independently, and they need not bracket the main pair. 100/100 gives the " +
-                        "pure Buhlmann ZHL-16C ceiling; values above 100 go beyond it (less conservative " +
-                        "than the raw model); a low GF Low with a high GF High deepens the first stop " +
-                        "while keeping the shallow stops short. Editable here or directly beside the " +
-                        "altGF checkbox on the main screen.",
-                ) {
+                ConfigGroup("Alternative gradient factors") {
                     Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
                         LabeledField("Alt GF Low", m.altGfLow, Modifier.weight(1f)) { m.altGfLow = it }
                         LabeledField("Alt GF High", m.altGfHigh, Modifier.weight(1f)) { m.altGfHigh = it }
                     }
                 }
 
-                ConfigGroup(
-                    "NDL calculation",
-                    "Which gradient factor decides whether a direct, no-stop ascent to the surface is " +
-                        "still allowed. GF High is the standard behaviour for ZHL16-C. GF Low is stricter " +
-                        "and ends the no-decompression phase earlier.",
-                ) {
+                ConfigGroup("NDL calculation") {
                     Text("Calculate NDL by", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
                     Seg(
                         listOf("GF High (standard)", "GF Low"),
@@ -166,23 +127,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                 }
             }
 
-            ConfigGroup(
-                "Conditions",
-                "Altitude of the dive site, 0 for sea level. Above sea level the air is thinner, so " +
-                    "the same dive carries more decompression. Equilibrated means your tissues have " +
-                    "off-gassed their excess nitrogen to match the thinner air; the U.S. Navy Diving " +
-                    "Manual puts that at about twelve hours at altitude. If you drove up this morning " +
-                    "you are still carrying your sea-level nitrogen and need considerably more " +
-                    "decompression — at 3000 m that can double the obligation, so state it honestly. " +
-                    "Hours at altitude covers the middle: the tissues wash out at their own rates, and " +
-                    "the slow ones are still loaded well after the fast ones have finished. This is " +
-                    "equilibration, not acclimatisation — adjusting to the lower oxygen takes far " +
-                    "longer and is not modelled here at all. Conservatism applies only when gradient " +
-                    "factors are switched off. It (0–50 %) preloads the tissue compartments with " +
-                    "additional inert gas — nitrogen, and helium in proportion when the profile uses " +
-                    "trimix — weighted from the fast compartments (none) to the slow ones (the full " +
-                    "percentage), as if a previous dive had been made. Zero is the clean-diver profile.",
-            ) {
+            ConfigGroup("Conditions") {
                 LabeledField("Altitude (${m.depthUnit})", m.altitude) { m.altitude = it }
                 // Only above sea level, where the two references differ. At 0 m
                 // equilibrated and just-arrived are the same tissue loading and
@@ -221,18 +166,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                 }
             }
 
-            // Stop grid stands on its own. It used to live inside Deep stops,
-            // which hid it completely whenever gradient factors were on — yet
-            // every schedule is built on this grid, GF or not, Pyle or not, and
-            // a diver who wants 6 m increments on a rebreather has nothing to
-            // do with deep stops.
-            ConfigGroup(
-                "Stop depths",
-                "Stop distance is the interval between decompression stops — 3 m is the convention, " +
-                    "some rebreather divers prefer 6 m. Last stop is the depth of the final stop; " +
-                    "some prefer pulling the 10 ft / 3 m stop deeper. Both apply to every schedule, " +
-                    "whichever model, gradient factors or deep stops are in use.",
-            ) {
+            ConfigGroup("Stop depths") {
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
                     LabeledField("Stop distance (${m.depthUnit})", m.stopDistance, Modifier.weight(1f)) { m.stopDistance = it }
                     LabeledField("Last stop (${m.depthUnit})", m.lastStop, Modifier.weight(1f)) { m.lastStop = it }
@@ -240,14 +174,7 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
             }
 
             if (!(m.useGF && m.model == "c")) {
-                ConfigGroup(
-                    "Deep stops",
-                    "Pyle deep stops insert short stops between the bottom and the first normal stop " +
-                        "(mean-depth rule, re-run iteratively) to reduce microbubble formation and " +
-                        "post-dive fatigue. Pyle stop time is the minutes spent at each generated stop " +
-                        "(1–5). Not shown when gradient factors are enabled: GF Low takes over the " +
-                        "deep-stop role.",
-                ) {
+                ConfigGroup("Deep stops") {
                     Seg(
                         listOf("None", "Pyle"),
                         if (m.deepStops == "p") 1 else 0,
@@ -278,68 +205,57 @@ fun ConfigSheet(m: PlannerModel, onDismiss: () -> Unit) {
                 }
             }
 
-            ConfigGroup(
-                "Descent — range, rate (${m.depthUnit}/min)",
-                "One range per line: depth1-depth2, rate (ft or m per minute). List shallowest range " +
-                    "first, leave no gaps.",
-            ) {
+            ConfigGroup("Descent — range, rate (${m.depthUnit}/min)") {
                 RateEditor(m.descentRates, minHeight = 60) { m.descentRates = it }
             }
 
-            ConfigGroup(
-                "Ascent — range, rate (${m.depthUnit}/min, deepest first)",
-                "One range per line, deepest range first, no gaps. Slow shallow ascent rates are " +
-                    "credited to the decompression and can shorten stops or remove them entirely.",
-            ) {
+            ConfigGroup("Ascent — range, rate (${m.depthUnit}/min, deepest first)") {
                 RateEditor(m.ascentRates, minHeight = 96) { m.ascentRates = it }
             }
 
-            ConfigGroup(
-                "Deco Set Point (CCR) / Slide rate",
-                "Setpoint changes by depth range during CCR deco, one per line, e.g. 80-30, 1.4 — a " +
-                    "setpoint of 0 switches to open circuit for that range. Only active when the circuit " +
-                    "is set to CCR on the main screen (disabled for open-circuit dives). Slide rate is " +
-                    "the PO2 burned off per minute during a Scamahorn Slide: enter a bottom setpoint like " +
-                    "1.2-1.6 to ride the descent PO2 spike down to the setpoint for a deco advantage.",
-            ) {
+            ConfigGroup("Deco Set Point (CCR) / Slide rate") {
                 RateEditor(m.decoSetpoints, enabled = m.circuitClosed, minHeight = 60) {
                     m.decoSetpoints = it
                 }
                 LabeledField("Slide rate  PO2/min", m.slideRate, Modifier.width(190.dp)) { m.slideRate = it }
             }
 
-            ConfigGroup(
-                "Extended stops on a deco mix switch",
-                "Extra minutes held at the depth where the planner switches to a deco mix, " +
-                    "on top of whatever the model requires. Common practice: settle on the new " +
-                    "gas, confirm the analysis and the PO2, and let the switch do some work for " +
-                    "you. The amount is chosen by the depth of the switch, in two bands. " +
-                    "Switches shallower than 7 m / 23 ft are not extended — the final stop is " +
-                    "already long. The extra time off-gasses you, so it does not simply add to " +
-                    "the total: the stops above it usually shorten.",
-            ) {
+            ConfigGroup("Extended stops on a deco mix switch") {
                 Stepper0to10(if (m.depthsMetric) "30 m+" else "100 ft+", m.extStopDeep) { m.extStopDeep = it }
                 Stepper0to10(if (m.depthsMetric) "7–30 m" else "23–100 ft", m.extStopShallow) { m.extStopShallow = it }
             }
 
-            ConfigGroup(
-                "Deco gas limits",
-                "The planner auto-selects the deco gas with the highest PO2 that stays within Max PO2 " +
-                    "and Max END. Set Max PO2 to 1.6 if you want 100% O2 at the 20 ft / 6 m stop; tune it " +
-                    "down to lower CNS exposure at the cost of longer deco.",
-            ) {
+            ConfigGroup("Air breaks") {
+                Check("Plan air breaks", m.airBreaksOn) { m.airBreaksOn = it }
+                if (m.airBreaksOn) {
+                    Seg(
+                        listOf("Navy", "Subsurface"),
+                        if (m.airBreakMode == "navy") 0 else 1,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { m.airBreakMode = if (it == 0) "navy" else "subsurface" }
+                    Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
+                        LabeledField("Break after (min)", m.breakAfter, Modifier.weight(1f)) {
+                            m.breakAfter = it
+                        }
+                        LabeledField("Break for (min)", m.breakFor, Modifier.weight(1f)) {
+                            m.breakFor = it
+                        }
+                    }
+                    LabeledField(
+                        "Break gas (blank = automatic)", m.breakGas,
+                        Modifier.width(240.dp), numeric = false,
+                    ) { m.breakGas = it }
+                }
+            }
+
+            ConfigGroup("Deco gas limits") {
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
                     LabeledField("Max PO2", m.maxPO2, Modifier.weight(1f)) { m.maxPO2 = it }
                     LabeledField("Max END (${m.depthUnit})", m.maxEND, Modifier.weight(1f)) { m.maxEND = it }
                 }
             }
 
-            ConfigGroup(
-                "RMV values",
-                "Respiratory Minute Volume for gas-consumption planning, in the RMV units above. Deco " +
-                    "is usually lower than Bottom, since you are more at rest hanging on the line. If you " +
-                    "don't know your RMV, measure it.",
-            ) {
+            ConfigGroup("RMV values") {
                 Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) {
                     LabeledField("Bottom (${m.rmvUnit})", m.bottomRMV, Modifier.weight(1f)) { m.bottomRMV = it }
                     LabeledField("Deco (${m.rmvUnit})", m.decoRMV, Modifier.weight(1f)) { m.decoRMV = it }

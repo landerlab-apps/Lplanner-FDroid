@@ -63,6 +63,11 @@ class StateStore(context: Context) {
             s.decoRMV = o.optString("decoRMV", s.decoRMV)
             s.extStopShallow = o.optInt("extStopShallow", s.extStopShallow)
             s.extStopDeep = o.optInt("extStopDeep", s.extStopDeep)
+            s.airBreaksOn = o.optBoolean("airBreaksOn", s.airBreaksOn)
+            s.airBreakMode = o.optString("airBreakMode", s.airBreakMode)
+            s.breakAfter = o.optString("breakAfter", s.breakAfter)
+            s.breakFor = o.optString("breakFor", s.breakFor)
+            s.breakGas = o.optString("breakGas", s.breakGas)
             s.si48 = o.optBoolean("si48", s.si48)
             s.si24 = o.optBoolean("si24", s.si24)
             s.siActual = o.optString("siActual", s.siActual)
@@ -71,6 +76,7 @@ class StateStore(context: Context) {
             s.circuitClosed = o.optBoolean("circuitClosed", s.circuitClosed)
             s.plus3m = o.optBoolean("plus3m", s.plus3m)
             s.plus5min = o.optBoolean("plus5min", s.plus5min)
+            s.travelGas = o.optBoolean("travelGas", s.travelGas)
             s.useAltGF = o.optBoolean("useAltGF", s.useAltGF)
             s.baselineTissue = if (o.isNull("baselineTissue")) null else o.optString("baselineTissue")
             s.baselineDate = o.optLong("baselineDate", 0L)
@@ -130,10 +136,14 @@ class StateStore(context: Context) {
                 .put("maxPO2", s.maxPO2).put("maxEND", s.maxEND)
                 .put("bottomRMV", s.bottomRMV).put("decoRMV", s.decoRMV)
                 .put("extStopShallow", s.extStopShallow).put("extStopDeep", s.extStopDeep)
+                .put("airBreaksOn", s.airBreaksOn).put("airBreakMode", s.airBreakMode)
+                .put("breakAfter", s.breakAfter).put("breakFor", s.breakFor)
+                .put("breakGas", s.breakGas)
                 .put("si48", s.si48).put("si24", s.si24).put("siActual", s.siActual)
                 .put("decoGasesOn", s.decoGasesOn).put("decoGases", s.decoGases)
                 .put("circuitClosed", s.circuitClosed)
                 .put("plus3m", s.plus3m).put("plus5min", s.plus5min)
+                .put("travelGas", s.travelGas)
                 .put("useAltGF", s.useAltGF)
                 .put("levels", levels)
                 .put("baselineTissue", s.baselineTissue ?: JSONObject.NULL)
@@ -184,6 +194,12 @@ class PlannerState {
     /** Extra hold on a deco mix switch, per depth band, 0-10 min. */
     var extStopShallow = 0
     var extStopDeep = 0
+    /** Air breaks: off, or "navy" / "subsurface". */
+    var airBreaksOn = false
+    var airBreakMode = "navy"
+    var breakAfter = "30"
+    var breakFor = "5"
+    var breakGas = ""
     var si48 = false
     var si24 = false
     var siActual = ""
@@ -192,6 +208,7 @@ class PlannerState {
     var circuitClosed = false
     var plus3m = false
     var plus5min = false
+    var travelGas = false
     var useAltGF = false
     var levels: List<DiveLevel> = emptyList()
 

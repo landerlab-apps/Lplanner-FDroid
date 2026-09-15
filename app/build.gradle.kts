@@ -42,8 +42,8 @@ android {
         applicationId = "com.landerlab.lplanner.fdroid"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.7.0"
+        versionCode = 15
+        versionName = "1.8.0"
 
         externalNativeBuild {
             cmake {

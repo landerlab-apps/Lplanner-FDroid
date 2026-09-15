@@ -110,9 +110,6 @@ fun CompactSetupChips(m: PlannerModel, expanded: Boolean, onToggle: () -> Unit) 
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                // OC / CCR rather than Open / Closed. As a segmented control both
-                // states were on screen so "Open" was unambiguous; as a single chip
-                // it has to name itself, and these are the terms divers use.
                 Chip(if (m.circuitClosed) "CCR" else "OC", m.circuitClosed) {
                     m.circuitClosed = !m.circuitClosed
                 }
@@ -122,9 +119,8 @@ fun CompactSetupChips(m: PlannerModel, expanded: Boolean, onToggle: () -> Unit) 
                 ) { editDeco = true }
                 Chip(if (m.depthsMetric) "+3m" else "+10ft", m.plus3m) { m.plus3m = !m.plus3m }
                 Chip("+5min", m.plus5min) { m.plus5min = !m.plus5min }
-                // Toggle only. Carrying "90/90" in the label cost about a quarter
-                // of the row to show two numbers that are set once and then left
-                // alone; they are edited in Config.
+                Chip("travel gas", m.travelGas) { m.travelGas = !m.travelGas }
+                Chip("air breaks", m.airBreaksOn) { m.airBreaksOn = !m.airBreaksOn }
                 if (m.model != "vval") {
                     Chip("altGF", m.useAltGF) { m.useAltGF = !m.useAltGF }
                 }
@@ -223,6 +219,7 @@ private fun settingsSummary(m: PlannerModel): String = buildList {
     if (m.decoGasesOn && m.decoGases.isNotBlank()) add("Deco ${m.decoGases}")
     if (m.plus3m) add(if (m.depthsMetric) "+3m" else "+10ft")
     if (m.plus5min) add("+5min")
+    if (m.travelGas) add("travel gas")
     // The numbers are worth showing here even though the chip no longer
     // carries them — this is text, and it costs nothing.
     if (m.useAltGF && m.model != "vval") add("altGF ${m.altGfLow}/${m.altGfHigh}")

@@ -1,0 +1,33 @@
+Air breaks, travel gas, and VVAL-79.
+
+A break is planned when you are breathing oxygen at the last stop depth or
+shallower, or when CNS reaches the warning threshold. Config sets how long you
+go before a break, how long it lasts, and which gas to take. Left blank, the
+planner picks the leanest mix you carry that is still breathable at that depth,
+which keeps a hypoxic back gas out of a 3 m break. Two treatments: Navy, where
+the break is dead time and the stop simply grows, and Subsurface, where the
+break is modelled on the break gas. The oxygen clock runs across stop changes
+and excludes travel, so "break after 30" means thirty minutes of oxygen
+wherever you breathed it.
+
+Travel gas. A descent on a hypoxic back gas now starts on the leanest mix you
+carry that is breathable at the surface and changes over at the first safe stop
+depth. It costs no decompression.
+
+VVAL-18 is now VVAL-79, and plans air and nitrox only. If you have planned
+trimix on VVAL-18, replan it on VPM-B or on ZHL16-C with gradient factors. The
+model now carries the published nine-compartment parameter set and reproduces
+the U.S. Navy Diving Manual Rev. 7 no-decompression table to within a minute at
+15 of 21 depths, always on the permissive side. A dive carrying helium is
+refused with an
+explanation rather than computed against numbers the Navy has never published.
+
+Two defects found while auditing. A model name typed with capitals, such as
+VVAL18, used to select Buhlmann silently; names are now read
+case-insensitively and an unrecognised one says so on the plan. A stop that
+cleared in exactly zero time printed "-0 minutes".
+
+Config is now a plain list of controls. Every setting is explained in the
+manual under Info, where it can be read end to end.
+
+Engine 1.37.0.

@@ -65,8 +65,8 @@ RepoType: git
 Repo: https://github.com/landerlab-apps/Lplanner-FDroid.git
 
 Builds:
-  - versionName: 1.7.0
-    versionCode: 12
+  - versionName: 1.8.0
+    versionCode: 15
     commit: <run: git rev-parse HEAD>   # full hash, never a tag
     subdir: app
     submodules: true
@@ -76,8 +76,8 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.7.0
-CurrentVersionCode: 12
+CurrentVersion: 1.8.0
+CurrentVersionCode: 15
 ```
 
 Check before submitting:

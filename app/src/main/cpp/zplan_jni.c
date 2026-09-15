@@ -4,7 +4,8 @@
  * JNI bridge to the ZPlanKit C engine (czplan.c), mirroring the Swift API in
  * ZPlanKit/Sources/ZPlanKit/ZPlanKit.swift exactly:
  *
- *   profile.dat text (+ optional tissue.dat text)  ->  report, warnings, tissue
+ *   profile.dat text (+ optional tissue.dat text)
+ *     ->  report, warnings, tissue, refused
  *
  * The whole engine is driven through the profile text, so nothing of zp_config
  * has to be marshalled field by field. Keeping the boundary this narrow is what
@@ -87,13 +88,19 @@ static void write_tissues(const zp_result *r, char *buf, size_t buflen)
         n += snprintf(buf + n, buflen - n, "%f\n", r->end_phe[i] / kAtm);
 }
 
+/* The fifth element is the refusal flag. Without it the Kotlin side cannot
+ * tell "here is a plan, with advisories" from "there is no plan, and this is
+ * why", and it strips the warnings in both cases - which on a refusal leaves
+ * the diver looking at NO PLAN COMPUTED and no reason. */
 static jobjectArray make_result(JNIEnv *env, const char *err, const char *report,
-                                const char *warnings, const char *tissue)
+                                const char *warnings, const char *tissue,
+                                int refused)
 {
     jclass cls = (*env)->FindClass(env, "java/lang/String");
-    jobjectArray out = (*env)->NewObjectArray(env, 4, cls, NULL);
-    const char *vals[4] = { err, report, warnings, tissue };
-    for (int i = 0; i < 4; i++) {
+    jobjectArray out = (*env)->NewObjectArray(env, 5, cls, NULL);
+    const char *vals[5] = { err, report, warnings, tissue,
+                            refused ? "1" : "0" };
+    for (int i = 0; i < 5; i++) {
         if (!vals[i]) continue;
         jstring s = (*env)->NewStringUTF(env, vals[i]);
         (*env)->SetObjectArrayElement(env, out, i, s);
@@ -103,7 +110,8 @@ static jobjectArray make_result(JNIEnv *env, const char *err, const char *report
 }
 
 /*
- * Returns String[4]: { error-or-null, report, warnings, tissueFile }.
+ * Returns String[5]: { error-or-null, report, warnings, tissueFile,
+ * "1" or "0" for refused }.
  * When element 0 is non-null the run failed and the rest are null.
  */
 JNIEXPORT jobjectArray JNICALL
@@ -121,13 +129,13 @@ Java_com_landerlab_lplanner_ZPlan_nativePlan(JNIEnv *env, jobject thiz,
     err[0] = '\0';
 
     if (!cfg || !res || !report || !tissue) {
-        ret = make_result(env, "Out of memory", NULL, NULL, NULL);
+        ret = make_result(env, "Out of memory", NULL, NULL, NULL, 0);
         goto done;
     }
 
     const char *profile = (*env)->GetStringUTFChars(env, jProfile, NULL);
     if (!profile) {
-        ret = make_result(env, "Could not read profile text", NULL, NULL, NULL);
+        ret = make_result(env, "Could not read profile text", NULL, NULL, NULL, 0);
         goto done;
     }
 
@@ -138,7 +146,7 @@ Java_com_landerlab_lplanner_ZPlan_nativePlan(JNIEnv *env, jobject thiz,
     if (rc != 0) {
         char msg[ERR_BUF + 32];
         snprintf(msg, sizeof(msg), "Profile parse error: %s", err);
-        ret = make_result(env, msg, NULL, NULL, NULL);
+        ret = make_result(env, msg, NULL, NULL, NULL, 0);
         goto done;
     }
 
@@ -151,14 +159,16 @@ Java_com_landerlab_lplanner_ZPlan_nativePlan(JNIEnv *env, jobject thiz,
     }
 
     if (zp_plan(cfg, res) != 0) {
-        ret = make_result(env, "Decompression planning failed", NULL, NULL, NULL);
+        ret = make_result(env, "Decompression planning failed", NULL, NULL,
+                          NULL, 0);
         goto done;
     }
 
     zp_report(cfg, res, report, REPORT_BUF);
     write_tissues(res, tissue, TISSUE_BUF);
 
-    ret = make_result(env, NULL, report, res->warnings, tissue);
+    ret = make_result(env, NULL, report, res->warnings, tissue,
+                      res->refused ? 1 : 0);
 
 done:
     free(cfg); free(res); free(report); free(tissue);

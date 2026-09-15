@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.landerlab.lplanner.BuildConfig
+import com.landerlab.lplanner.ConfigGuide
 import com.landerlab.lplanner.Disclaimer
 import com.landerlab.lplanner.DiveLevel
 import com.landerlab.lplanner.Manual
@@ -234,15 +235,6 @@ private fun TopBar(
                 .padding(horizontal = 18.dp, vertical = 7.dp),
         )
         Box(Modifier.weight(1f))
-        // Share, Print and Info are permanent and carry no caption. The three
-        // words cost more width than the icons they labelled, and on a 360 dp
-        // screen that was the difference between Print fitting and not. All
-        // three keep their contentDescription, so a screen reader still names
-        // them and nothing is lost to anyone who needs the word.
-        //
-        // Share and Print dim to 40% while there is nothing to send rather
-        // than disappearing: a bar that changes shape after the first
-        // Calculate makes the buttons hard to find twice.
         val noPlan = m.planText.isEmpty()
         BarButton("Share", Icons.Filled.Share, enabled = !noPlan, showLabel = false) {
             val send = Intent(Intent.ACTION_SEND).apply {
@@ -277,6 +269,13 @@ private fun InfoDialog(onDismiss: () -> Unit) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Text(Manual.text, style = MaterialTheme.typography.bodySmall)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text(
+                    "CONFIG SETTINGS",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(ConfigGuide.text, style = MaterialTheme.typography.bodySmall)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 // F-Droid build only; see the note on Support. The file is
                 // identical in both Android trees so drift-check stays clean.
                 if (Support.showInBuild(BuildConfig.APPLICATION_ID)) {
@@ -308,7 +307,7 @@ private fun InfoDialog(onDismiss: () -> Unit) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
                 Text(
-                    ZPlan.version,
+                    "Lplanner ${BuildConfig.VERSION_NAME} · engine ZPlanKit ${ZPlan.version} · AI-assisted",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
@@ -445,6 +444,8 @@ private fun AutoRow(m: PlannerModel) {
     ) {
         Check(if (m.depthsMetric) "+3m" else "+10ft", m.plus3m) { m.plus3m = it }
         Check("+5min", m.plus5min) { m.plus5min = it }
+        Check("travel gas", m.travelGas) { m.travelGas = it }
+        Check("air breaks", m.airBreaksOn) { m.airBreaksOn = it }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -589,11 +590,6 @@ private fun PlanPane(m: PlannerModel, onFullScreen: () -> Unit) {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Keeping a plan is deliberate. The log used to take every
-                // calculation, so it filled with the throwaway runs it takes to
-                // settle on a dive and the ones worth keeping were lost among
-                // them. Nothing to do with "Next dive", which loads your
-                // tissues — this only files a schedule for later.
                 if (m.canSaveLog) {
                     Row(
                         Modifier
